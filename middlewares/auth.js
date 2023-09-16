@@ -4,8 +4,6 @@ const { SECRET_KEY = 'token' } = process.env;
 
 const { UnAuthorizedError } = require('../errors/UnAuthorizedError');
 
-// console.log(SECRET_KEY);
-
 module.exports = (req, res, next) => {
   const { authorization } = req.headers;
 
@@ -17,7 +15,6 @@ module.exports = (req, res, next) => {
   let payload;
 
   try {
-    // payload = jwt.verify(token, 'SECRET_KEY');
     payload = jwt.verify(token, SECRET_KEY);
   } catch (err) {
     throw new UnAuthorizedError('Необходима авторизация');
