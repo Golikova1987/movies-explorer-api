@@ -7,26 +7,7 @@ const { BadRequestError } = require('../errors/BadRequestError');
 const { NotFoundError } = require('../errors/NotFoundError');
 const { ConflictError } = require('../errors/ConflictError');
 
-const { SECRET_KEY = 'token' } = process.env;
-
-// получение информации о пользователе
-module.exports.getUserInfo = (req, res, next) => {
-  const userId = req.user._id;
-  User.findById(userId)
-    .orFail()
-    .then((user) => {
-      res.send(user);
-    })
-    .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError('Пользователь не найден.'));
-      } else {
-        next(err);
-      }
-    });
-};
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 // создание нового пользователя
 module.exports.createUser = (req, res, next) => {
@@ -69,13 +50,41 @@ module.exports.updateUserInfo = (req, res, next) => {
     });
 };
 
+// получение информации о пользователе
+module.exports.getUserInfo = (req, res, next) => {
+  const userId = req.user._id;
+  User.findById(userId)
+    .orFail()
+    .then((user) => {
+      res.send(user);
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError('Переданы некорректные данные'));
+      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Пользователь не найден.'));
+      } else {
+        next(err);
+      }
+    });
+};
+
 // аутентификация
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, SECRET_KEY, { expiresIn: '7d' });
-      res.send({ token });
+      const token = jwt.sign({ _id: user._id }, NODE_ENV ? JWT_SECRET : 'secret-key', { expiresIn: '7d' });
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+        sameSite: true,
+      });
+      return res.status(200).send({ message: `Успешный вход пользователя ${user.email}` });
     })
     .catch(next);
+};
+
+module.exports.deleteCookies = (req, res) => {
+  res.status(200).clearCookie('jwt').send({ message: 'Данные удалены' });
 };

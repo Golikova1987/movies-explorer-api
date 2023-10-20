@@ -4,6 +4,8 @@ const users = require('./users');
 const movies = require('./movies');
 const { createUser, login } = require('../controllers/users');
 
+const { deleteCookies } = require('../controllers/users');
+
 const auth = require('../middlewares/auth');
 const { NotFoundError } = require('../errors/NotFoundError');
 
@@ -20,6 +22,8 @@ router.post('/signin', celebrate({
     password: Joi.string().required(),
   }),
 }), login);
+
+router.use('/signout', deleteCookies);
 
 router.use(auth);
 router.use('/users', users);
