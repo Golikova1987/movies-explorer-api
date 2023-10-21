@@ -7,7 +7,7 @@ const { BadRequestError } = require('../errors/BadRequestError');
 const { NotFoundError } = require('../errors/NotFoundError');
 const { ConflictError } = require('../errors/ConflictError');
 
-const { NODE_ENV, JWT_SECRET } = process.env;
+const { SECRET_KEY = 'token' } = process.env;
 
 // создание нового пользователя
 module.exports.createUser = (req, res, next) => {
@@ -74,17 +74,8 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, NODE_ENV ? JWT_SECRET : 'secret-key', { expiresIn: '7d' });
-      res.cookie('jwt', token, {
-        maxAge: 3600000 * 24 * 7,
-        httpOnly: true,
-        sameSite: true,
-      });
-      return res.status(200).send({ message: `Успешный вход пользователя ${user.email}` });
+      const token = jwt.sign({ _id: user._id }, SECRET_KEY, { expiresIn: '7d' });
+      res.send({ token });
     })
     .catch(next);
-};
-
-module.exports.deleteCookies = (req, res) => {
-  res.status(200).clearCookie('jwt').send({ message: 'Данные удалены' });
 };
