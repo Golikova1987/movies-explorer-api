@@ -9,25 +9,6 @@ const { ConflictError } = require('../errors/ConflictError');
 
 const { SECRET_KEY = 'token' } = process.env;
 
-// получение информации о пользователе
-module.exports.getUserInfo = (req, res, next) => {
-  const userId = req.user._id;
-  User.findById(userId)
-    .orFail()
-    .then((user) => {
-      res.send(user);
-    })
-    .catch((err) => {
-      if (err instanceof mongoose.Error.CastError) {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError('Пользователь не найден.'));
-      } else {
-        next(err);
-      }
-    });
-};
-
 // создание нового пользователя
 module.exports.createUser = (req, res, next) => {
   const {
@@ -63,6 +44,25 @@ module.exports.updateUserInfo = (req, res, next) => {
         next(new BadRequestError(err.message));
       } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
         next(new NotFoundError('Пользователь не найден'));
+      } else {
+        next(err);
+      }
+    });
+};
+
+// получение информации о пользователе
+module.exports.getUserInfo = (req, res, next) => {
+  const userId = req.user._id;
+  User.findById(userId)
+    .orFail()
+    .then((user) => {
+      res.send(user);
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.CastError) {
+        next(new BadRequestError('Переданы некорректные данные'));
+      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Пользователь не найден.'));
       } else {
         next(err);
       }
